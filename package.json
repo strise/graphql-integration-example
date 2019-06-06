@@ -1,0 +1,18 @@
+{
+  "name": "graphqlexample",
+  "version": "0.0.0",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mitoai/GraphQLExample.git"
+  },
+  "author": "Alf Jonassen <alf@mito.ai>",
+  "dependencies": {
+    "apollo-cache-inmemory": "^1.6.1",
+    "apollo-client": "^2.6.1",
+    "apollo-link-http": "^1.5.14",
+    "graphql": "^14.3.1",
+    "graphql-tag": "^2.10.1",
+    "node-fetch": "^2.6.0"
+  }
+}
