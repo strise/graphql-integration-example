@@ -1,4 +1,4 @@
-# GraphQLExample
+# GraphQL Apollo & Nodejs Example
 A repository with an examle of how to use our GraphQL API
 
 # Run example
