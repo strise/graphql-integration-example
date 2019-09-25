@@ -63,5 +63,6 @@ async function getApolloClient() {
   return client
 }
 
+// Create a clientPromise and export it
 const clientPromise = getApolloClient()
 module.exports = clientPromise

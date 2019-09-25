@@ -1,7 +1,7 @@
 const gql = require('graphql-tag')
 const clientPromise = require('./client')
 
-
+// Helper function that wraps the ApolloClient and handles errors
 async function queryAndHandleException(query, variables) {
   const client = await clientPromise
   try {
@@ -23,7 +23,7 @@ query {
             edges {
               node {
                 id
-                name(language: NORWEGIAN)
+                name
               }
             }
           }
@@ -35,7 +35,8 @@ query {
 async function getPortfolios() {
   const response = await queryAndHandleException(PORTFOLIOS)
   if (!response) return
-  console.log(response)
+  const portfolios = response.data.currentUser.portfolios.edges.map((edge) => edge.node)
+  return portfolios
 }
 
 
@@ -53,51 +54,60 @@ query companies($searchQuery: String!) {
 async function getCompanies(searchQuery) {
   const response = await queryAndHandleException(COMPANIES, {searchQuery: searchQuery})
   if (!response) return
-  console.log('getCompanies', response.data.companies.edges)
+  const companies = response.data.companies.edges.map((edge) => edge.node)
+  return companies
 }
 
-
-const COUNTRIES = gql`
-query countries($q: String) {
-  countries(q: $q first: 20) {
-    edges {
-      node {
-        id
-        name
+const COMPANY_AND_EVENTS = gql`
+query companyAndEvents($id: ID! $languages: [Language!] $from: ISODateTime! $to: ISODateTime!) {
+  company(id: $id) {
+    id
+    name
+    events(from: $from to: $to languageFilter: $languages) {
+      edges {
+        node {
+          title
+          summary {
+            text
+          }
+          publisher
+          published
+        }
+      }
+      histogram(interval: DAY timeZone: "Europe/Oslo") {
+        values {
+          value
+          time
+        }
       }
     }
   }
-}
-`
-async function getCountries(searchQuery) {
-  const response = await queryAndHandleException(COUNTRIES, {q: searchQuery})
-  if (!response) return
-  console.log('Countries', response.data.countries.edges)
-}
-
-const norwayId = 'Q20'
-const TRENDING_COMPANIES_IN_COUNTRY = gql`
-query trendingCompaniesInCountry($country: ID! $from: ISODateTime! $to: ISODateTime!) {
-  trendingCompanies(locations: [$country] from: $from to: $to) {
-    edges {
-      node {
-        id
-        name
-      }
-    }
-  }
-}
-`
-
-async function getTrendingInCountry(countryId) {
+}`
+async function getCompanyAndEvents(companyId) {
   const now = new Date()
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const response = await queryAndHandleException(TRENDING_COMPANIES_IN_COUNTRY, {country: countryId, from: oneWeekAgo, to: now})
+  const response = await queryAndHandleException(COMPANY_AND_EVENTS, {id: companyId, from: oneWeekAgo, to: now, languages: ["NORWEGIAN"]})
   if (!response) return
-  console.log(response)
+  const companyAndEvents = response.data.company
+  return companyAndEvents
 }
 
-getPortfolios()
-getCompanies('Strise.ai')
-getCountries('norway')
-getTrendingInCountry(norwayId)
+async function main() {
+  const portfolios = await getPortfolios()
+  if (portfolios.length === 0) return
+
+  // Take the first portfolio
+  const firstPortfolio = portfolios[0]
+
+  // Find the companies for this portfolio
+  const firstPortfolioCompanies = firstPortfolio.companies.edges.map((edge) => edge.node)
+
+  for (const company of firstPortfolioCompanies) {
+    const companyId = company.id
+    console.log('Fetching events for: ', company.name, '.....')
+    const companyAndEvents = await getCompanyAndEvents(companyId)
+    console.log(JSON.stringify(companyAndEvents, null, 2))
+  }
+}
+
+main()
