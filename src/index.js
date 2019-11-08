@@ -65,11 +65,11 @@ query companyAndEvents($id: ID! $languages: [Language!] $from: ISODateTime! $to:
     name
     events(from: $from to: $to languageFilter: $languages) {
       edges {
+        summary {
+          text
+        }
         node {
           title
-          summary {
-            text
-          }
           publisher
           published
         }
